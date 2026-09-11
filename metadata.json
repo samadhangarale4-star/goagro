@@ -1,0 +1,6 @@
+{
+  "name": "Go Agro - Agri Supply Chain OS",
+  "description": "Indian farm-to-market agricultural supply chain operating system featuring Farmer, Transporter, Go Agro Ops, Commission Agent, and Buyer portals with trilingual support (English, Marathi, Hindi).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
