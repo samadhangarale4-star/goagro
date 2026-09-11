@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
 import { FarmerView } from './components/FarmerView';
 import { TransporterView } from './components/TransporterView';
-import { AdminOpsView } from './components/AdminOpsView';
-import { AgentView } from './components/AgentView';
 import { VendorView } from './components/VendorView';
-import { PriceBreakdownView } from './components/PriceBreakdownView';
-import { MarketCompareView } from './components/MarketCompareView';
+import { PriceBreakdownModal } from './components/PriceBreakdownModal';
 import { ReceiptModal } from './components/ReceiptModal';
 import { AudioGuideModal } from './components/AudioGuideModal';
 import { ComplaintModal } from './components/ComplaintModal';
@@ -17,11 +13,11 @@ import { Language, StakeholderRole, ShipmentItem } from './types';
 export default function App() {
   const [currentRole, setCurrentRole] = useState<StakeholderRole>('farmer');
   const [language, setLanguage] = useState<Language>('en');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shipments, setShipments] = useState<ShipmentItem[]>(defaultShipments);
   const [activeShipmentId, setActiveShipmentId] = useState<string>('GA-ON-00125');
 
   // Modals state
+  const [showPriceModal, setShowPriceModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showAudioGuideModal, setShowAudioGuideModal] = useState(false);
   const [showComplaintModal, setShowComplaintModal] = useState(false);
@@ -92,89 +88,69 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-slate-900 flex flex-col font-sans antialiased selection:bg-[#92f5a4] selection:text-[#003b1b]">
-      {/* Global Header */}
+      {/* Streamlined Clean Header with 3 Role Tabs */}
       <Header
         currentRole={currentRole}
         onSelectRole={setCurrentRole}
         lang={language}
         onSelectLang={setLanguage}
-        onToggleMenu={() => setSidebarOpen((prev) => !prev)}
+        onOpenAudioGuide={() => setShowAudioGuideModal(true)}
+        onOpenPriceModal={() => setShowPriceModal(true)}
       />
 
-      <div className="flex flex-1 pt-24 md:pt-28">
-        {/* Left Navigation Sidebar */}
-        <Sidebar
-          currentRole={currentRole}
-          onSelectRole={setCurrentRole}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          lang={language}
-        />
+      {/* Main Role Content (Full-width clean card layout, no cumbersome sidebar) */}
+      <main className="flex-1 w-full flex flex-col pb-12">
+        {currentRole === 'farmer' && (
+          <FarmerView
+            shipments={shipments}
+            currentShipment={activeShipment}
+            onSelectShipment={setActiveShipmentId}
+            onAddBooking={handleAddNewBooking}
+            lang={language}
+            onSelectLang={setLanguage}
+            onOpenAudioGuide={() => setShowAudioGuideModal(true)}
+            onOpenReceipt={() => setShowReceiptModal(true)}
+            onOpenComplaint={() => setShowComplaintModal(true)}
+          />
+        )}
 
-        {/* Main Workspace Area (with responsive left padding for lg screens) */}
-        <main className="flex-1 lg:pl-64 w-full flex flex-col pb-16">
-          {currentRole === 'farmer' && (
-            <FarmerView
-              shipments={shipments}
-              currentShipment={activeShipment}
-              onSelectShipment={setActiveShipmentId}
-              onAddBooking={handleAddNewBooking}
-              lang={language}
-              onSelectLang={setLanguage}
-              onOpenAudioGuide={() => setShowAudioGuideModal(true)}
-              onOpenReceipt={() => setShowReceiptModal(true)}
-              onOpenComplaint={() => setShowComplaintModal(true)}
-            />
-          )}
+        {currentRole === 'transporter' && (
+          <TransporterView
+            shipment={activeShipment}
+            onUpdateShipment={handleUpdateShipment}
+            lang={language}
+          />
+        )}
 
-          {currentRole === 'transporter' && (
-            <TransporterView
-              shipment={activeShipment}
-              onUpdateShipment={handleUpdateShipment}
-              lang={language}
-            />
-          )}
+        {currentRole === 'vendor' && (
+          <VendorView
+            shipment={activeShipment}
+            onUpdateShipment={handleUpdateShipment}
+            lang={language}
+          />
+        )}
+      </main>
 
-          {currentRole === 'admin' && (
-            <AdminOpsView
-              shipments={shipments}
-              onUpdateShipment={handleUpdateShipment}
-              lang={language}
-            />
-          )}
+      {/* Simple Footer */}
+      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
+        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>
+            <strong className="text-[#003b1b]">Go Agro</strong> • Direct Satara to Mumbai Agricultural Corridor
+          </span>
+          <span className="text-[11px] text-slate-400">
+            Guaranteed ₹27/kg Farm Gate • ₹1.75/kg Transporter • ₹30/kg Bulk Buyer
+          </span>
+        </div>
+      </footer>
 
-          {currentRole === 'agent' && (
-            <AgentView
-              shipment={activeShipment}
-              onUpdateShipment={handleUpdateShipment}
-              lang={language}
-            />
-          )}
+      {/* Modals */}
+      <PriceBreakdownModal
+        isOpen={showPriceModal}
+        onClose={() => setShowPriceModal(false)}
+        shipment={activeShipment}
+        lang={language}
+      />
 
-          {currentRole === 'vendor' && (
-            <VendorView
-              shipment={activeShipment}
-              onUpdateShipment={handleUpdateShipment}
-              lang={language}
-            />
-          )}
-
-          {currentRole === 'pricing' && (
-            <PriceBreakdownView
-              shipment={activeShipment}
-              lang={language}
-            />
-          )}
-
-          {currentRole === 'market_compare' && (
-            <MarketCompareView
-              lang={language}
-            />
-          )}
-        </main>
-      </div>
-
-      {/* Shared Modals */}
       <ReceiptModal
         isOpen={showReceiptModal}
         onClose={() => setShowReceiptModal(false)}

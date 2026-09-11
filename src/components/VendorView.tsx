@@ -4,17 +4,15 @@ import {
   CheckCircle2, 
   Truck, 
   MapPin, 
-  Receipt, 
-  Store, 
-  Tag, 
+  PhoneCall, 
+  FileText, 
   TrendingUp, 
-  Check, 
-  ArrowRight,
   ShieldCheck,
-  Building2
+  Check,
+  ArrowRight,
+  Clock
 } from 'lucide-react';
 import { Language, ShipmentItem } from '../types';
-import { translations } from '../i18n/translations';
 
 interface VendorViewProps {
   shipment: ShipmentItem;
@@ -22,19 +20,112 @@ interface VendorViewProps {
   lang: Language;
 }
 
-export const VendorView: React.FC<VendorViewProps> = ({ shipment, onUpdateShipment, lang }) => {
-  const t = translations[lang];
-  const [demandQty, setDemandQty] = useState(1000);
-  const [demandPrice, setDemandPrice] = useState(30.0);
+export const VendorView: React.FC<VendorViewProps> = ({
+  shipment,
+  onUpdateShipment,
+  lang,
+}) => {
+  const [orderQty, setOrderQty] = useState(1000);
+  const [orderPlaced, setOrderPlaced] = useState(false);
   const [deliveryConfirmed, setDeliveryConfirmed] = useState(shipment.currentStage >= 6);
-  const [demandPosted, setDemandPosted] = useState(false);
 
-  const purchasePricePerKg = 30.0;
-  const consumerPricePerKg = 37.0;
-  const grossRetailSpreadPerKg = consumerPricePerKg - purchasePricePerKg; // ₹7.00
-  const totalPurchaseValue = shipment.verifiedHubWeightKg * purchasePricePerKg;
-  const totalConsumerValue = shipment.verifiedHubWeightKg * consumerPricePerKg;
-  const totalGrossRetailProfit = shipment.verifiedHubWeightKg * grossRetailSpreadPerKg;
+  const purchaseRatePerKg = 30.0;
+  const consumerRetailRatePerKg = 37.0;
+  const retailProfitPerKg = consumerRetailRatePerKg - purchaseRatePerKg; // ₹7.00
+
+  const totalPurchase = orderQty * purchaseRatePerKg;
+  const totalRetailRevenue = orderQty * consumerRetailRatePerKg;
+  const totalRetailProfit = orderQty * retailProfitPerKg;
+
+  const t = {
+    en: {
+      buyerName: "Apex Urban Grocery Syndicate",
+      buyerLocation: "Vashi APMC Wholesale Terminal, Yard #12",
+      badge: "Verified Bulk Buyer",
+      wholesalePriceBanner: "Direct Wholesale Purchase Price: ₹30.00 / kg",
+      priceSub: "Delivered at Vashi Yard • Grade A Quality Guaranteed • Zero Wastage Deduction",
+      catalogTitle: "Fresh Farm Consignments (Direct Satara Hub)",
+      cropName: "Satara Red Onions (Garva Grade A - 55mm+)",
+      orderBoxTitle: "Place Direct Wholesale Order",
+      qtyLabel: "Consignment Quantity (kg)",
+      totalPayable: "Total Wholesale Cost:",
+      btnOrder: "Confirm Wholesale Order",
+      orderSuccess: "Wholesale order confirmed! Sourcing from Satara Aggregation Hub.",
+      inboundTitle: "Active Inbound Shipment",
+      inboundId: "Consignment",
+      statusEnRoute: "En Route to Mumbai Vashi (NH48 Expressway)",
+      eta: "Estimated Arrival: ~2 hours",
+      driverContact: "Assigned Transporter Driver",
+      callDriver: "Call Driver",
+      btnConfirmDelivery: "Confirm Delivery at Vashi Yard #12",
+      deliveryConfirmedText: "Delivery Confirmed & Accepted at Vashi Yard #12",
+      deliveryDesc: "Commercial invoice generated. Escrow payout triggered to Satara farmers.",
+      retailProfitTitle: "Your Retail Unit Economics",
+      retailPrice: "Retail Selling Benchmark: ₹37.00 / kg",
+      yourMargin: "Gross Retail Margin:",
+      expectedProfit: "Gross Profit on",
+    },
+    mr: {
+      buyerName: "एपेक्स अर्बन ग्रोसरी सिंडिकेट",
+      buyerLocation: "वाशी एपीएमसी घाऊक मार्केट, यार्ड #१२",
+      badge: "अधिकृत घाऊक खरेदीदार",
+      wholesalePriceBanner: "थेट घाऊक खरेदी दर: ₹३०.०० / किलो",
+      priceSub: "वाशी यार्डात थेट पोहोच • ग्रेड 'अ' हमी • मध्यस्थ कपात शून्य",
+      catalogTitle: "ताजा शेतीमाल (थेट सातारा हबमधून)",
+      cropName: "सातारा लाल कांदा (गरवा स्पेशल - ग्रेड 'अ' ५५ मिमी+)",
+      orderBoxTitle: "थेट घाऊक खरेदी नोंदवा",
+      qtyLabel: "खरेदी वजन (किलो)",
+      totalPayable: "एकूण देय रक्कम:",
+      btnOrder: "घाऊक खरेदी निश्चित करा",
+      orderSuccess: "खरेदी यशस्वी! सातारा हबमधून माल पाठवला जात आहे.",
+      inboundTitle: "मार्गावरील गाडीची माहिती",
+      inboundId: "माल पाठवणी क्र.",
+      statusEnRoute: "मुंबई वाशी मार्गावर (पुणे-मुंबई एक्सप्रेसवे)",
+      eta: "अंदाजे पोहोच वेळ: २ तास",
+      driverContact: "नेमणूक केलेला चालक",
+      callDriver: "चालकाला फोन करा",
+      btnConfirmDelivery: "वाशी यार्डात माल मिळाला - पोच द्या",
+      deliveryConfirmedText: "वाशी यार्ड #१२ येथे माल मिळाला व तपासला गेला",
+      deliveryDesc: "पावती व चलन जारी केले. सातारा शेतकऱ्यांना अंतिम रक्कम अदा करण्यात आली.",
+      retailProfitTitle: "किरकोळ विक्री नफा गणित",
+      retailPrice: "किरकोळ ग्राहक विक्री दर: ₹३७.०० / किलो",
+      yourMargin: "प्रति किलो निव्वळ मार्जिन:",
+      expectedProfit: "अंदाजे एकूण नफा",
+    },
+    hi: {
+      buyerName: "एपेक्स अर्बन ग्रॉसरी सिंडिकेट",
+      buyerLocation: "वाशी एपीएमसी थोक टर्मिनल, यार्ड #12",
+      badge: "सत्यापित थोक खरीदार",
+      wholesalePriceBanner: "सीधा थोक क्रय मूल्य: ₹30.00 / किलो",
+      priceSub: "वाशी मंडी में डिलीवरी • ग्रेड 'ए' गुणवत्ता गारंटी • कोई बिचौलिया कटौती नहीं",
+      catalogTitle: "ताजी फसल खेप (सतारा हब से सीधी)",
+      cropName: "सतारा लाल प्याज (गरवा स्पेशल - ग्रेड 'ए' 55mm+)",
+      orderBoxTitle: "सीधा थोक ऑर्डर बुक करें",
+      qtyLabel: "ऑर्डर वजन (किलो)",
+      totalPayable: "कुल देय राशि:",
+      btnOrder: "थोक ऑर्डर पक्का करें",
+      orderSuccess: "ऑर्डर पक्का हो गया! सतारा हब से खेप रवाना।",
+      inboundTitle: "आ रही गाड़ी की स्थिति",
+      inboundId: "खेप सं.",
+      statusEnRoute: "मुंबई वाशी की ओर (NH48 एक्सप्रेसवे)",
+      eta: "अनुमानित समय: ~2 घंटे",
+      driverContact: "गाड़ी का ड्राइवर",
+      callDriver: "ड्राइवर को कॉल करें",
+      btnConfirmDelivery: "वाशी मंडी में माल प्राप्त हुआ - पुष्टि करें",
+      deliveryConfirmedText: "वाशी यार्ड #12 पर माल प्राप्त और सत्यापित",
+      deliveryDesc: "चालान जारी। सतारा के किसानों को एस्क्रो से अंतिम भुगतान जारी।",
+      retailProfitTitle: "खुदरा बिक्री मुनाफा विश्लेषण",
+      retailPrice: "उपभोक्ता खुदरा मूल्य: ₹37.00 / किलो",
+      yourMargin: "प्रति किलो ग्रॉस मार्जिन:",
+      expectedProfit: "अनुमानित मुनाफा",
+    },
+  }[lang];
+
+  const handlePlaceOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOrderPlaced(true);
+    setTimeout(() => setOrderPlaced(false), 4000);
+  };
 
   const handleConfirmDelivery = () => {
     setDeliveryConfirmed(true);
@@ -43,253 +134,185 @@ export const VendorView: React.FC<VendorViewProps> = ({ shipment, onUpdateShipme
       currentStage: Math.max(shipment.currentStage, 6),
       status: 'delivered_vendor',
     });
-    alert("Delivery confirmed at Vashi APMC Terminal Yard #12! Escrow payout triggered for Farmer & Transporter.");
-  };
-
-  const handlePostDemand = (e: React.FormEvent) => {
-    e.preventDefault();
-    setDemandPosted(true);
-    setTimeout(() => setDemandPosted(false), 3000);
   };
 
   return (
-    <div className="px-4 lg:px-8 py-6 max-w-7xl mx-auto w-full space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-2xl p-6 shadow-xs border border-slate-200 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#003b1b] text-[#92f5a4] flex items-center justify-center shadow-xs shrink-0">
-            <ShoppingBag className="w-8 h-8" />
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 w-full">
+      {/* Top Buyer Banner */}
+      <div className="bg-[#003b1b] rounded-3xl p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-[#92f5a4] text-[#003b1b] text-xs font-bold px-2.5 py-0.5 rounded-full">
+              {t.badge}
+            </span>
+            <span className="text-xs text-emerald-200">{t.buyerLocation}</span>
           </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold text-slate-900">{t.buyerTitle}</h1>
-              <span className="bg-[#92f5a4] text-[#003b1b] px-2.5 py-0.5 rounded font-mono text-xs font-bold uppercase">
-                Apex Urban Grocery Syndicate
-              </span>
-            </div>
-            <p className="text-xs text-slate-600 font-mono">
-              Vendor Code: VND-904 • Vashi Terminal Yard #12 • Mumbai Metro Retail Supply
-            </p>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">{t.buyerName}</h1>
+          <p className="text-sm text-emerald-100 mt-0.5">{t.priceSub}</p>
         </div>
 
-        {/* Pricing Summary */}
-        <div className="w-full xl:w-auto p-4 bg-[#eaedff] rounded-xl border border-[#dae2fd] flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-white text-[#003b1b] flex items-center justify-center shadow-2xs">
-            <Tag className="w-5 h-5" />
+        {/* Wholesale Purchase Price Tag */}
+        <div className="bg-white/10 backdrop-blur-xs border border-white/20 rounded-2xl p-4 text-center md:text-right shrink-0">
+          <span className="text-xs text-emerald-200 block font-semibold">Direct Wholesale Price</span>
+          <div className="text-3xl sm:text-4xl font-black text-[#92f5a4] tracking-tight">
+            ₹30.00 <span className="text-base font-medium text-white">/ kg</span>
           </div>
-          <div>
-            <span className="text-[10px] font-mono uppercase text-slate-500 block">
-              Wholesale Purchase Rate
-            </span>
-            <span className="text-lg font-bold font-mono text-[#003b1b]">
-              ₹30.00 / kg
-            </span>
-            <span className="text-[11px] text-[#006d30] font-semibold block">
-              Consumer Retail @ ₹37.00/kg (₹7.00/kg Gross Spread)
-            </span>
-          </div>
+          <span className="text-[11px] text-emerald-200 block mt-0.5">Delivered at Vashi Yard</span>
         </div>
       </div>
 
-      {/* Main Grid: Create Demand + Active Procurement Delivery Tracking */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT COLUMN: Post Demand & Pricing Economics (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
-            <h2 className="text-base font-bold text-slate-900 mb-2">
-              {t.createDemand}
-            </h2>
-            <p className="text-xs text-slate-500 mb-4">
-              Post your daily onion procurement quota directly to Go Agro aggregator hubs.
+      {/* Active Inbound Delivery Tracking Card */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+              <h2 className="text-lg font-bold text-slate-900">{t.inboundTitle}</h2>
+              <span className="bg-slate-100 text-slate-700 font-mono text-xs font-bold px-2 py-0.5 rounded-md">
+                {shipment.id}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              1,000 kg Grade A Satara Red Onions • Sourced from Koregaon Farmers
             </p>
-
-            {demandPosted && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Demand RFQ matched with Satara Aggregator Hub consignment #{shipment.id}!</span>
-              </div>
-            )}
-
-            <form onSubmit={handlePostDemand} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Crop &amp; Quality Specifications</label>
-                <select className="w-full bg-[#f2f3ff] border border-slate-200 rounded-xl p-2.5 outline-none font-medium">
-                  <option>Red Onion (Garva Special) - Grade A 55mm+ (70%) &amp; Grade B (30%)</option>
-                  <option>Export Quality White Onion</option>
-                  <option>Pol Red Onion Standard</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Required Quantity (kg)</label>
-                  <input
-                    type="number"
-                    value={demandQty}
-                    onChange={(e) => setDemandQty(parseInt(e.target.value) || 0)}
-                    className="w-full bg-[#f2f3ff] border border-slate-200 rounded-xl p-2.5 font-mono text-sm font-bold text-slate-900 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Target Purchase Rate</label>
-                  <div className="flex items-center gap-1 bg-[#f2f3ff] border border-slate-200 rounded-xl p-2.5 font-mono text-sm font-bold text-[#003b1b]">
-                    <span>₹</span>
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={demandPrice}
-                      onChange={(e) => setDemandPrice(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-transparent outline-none"
-                    />
-                    <span className="text-xs font-normal text-slate-500">/kg</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Delivery Destination</label>
-                <input
-                  type="text"
-                  defaultValue="Vashi APMC Terminal Yard #12, Navi Mumbai"
-                  className="w-full bg-[#f2f3ff] border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#003b1b] text-white rounded-xl font-bold text-xs hover:bg-[#14532d] transition-all shadow-xs"
-              >
-                Post Daily Demand Request
-              </button>
-            </form>
           </div>
 
-          {/* Vendor Retail Spread Breakdown Card */}
-          <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-6 text-xs">
-            <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-[#006d30]" />
-              Vendor Unit Economics &amp; Consumer Retail
-            </h3>
-
-            <div className="space-y-2.5 text-slate-700">
-              <div className="p-3 bg-slate-50 rounded-xl flex justify-between border border-slate-100">
-                <span>Vendor Purchase from Go Agro:</span>
-                <span className="font-mono font-bold text-slate-900">₹30.00 / kg</span>
-              </div>
-              <div className="p-3 bg-emerald-50 rounded-xl flex justify-between border border-emerald-200">
-                <span className="text-emerald-900 font-semibold">Consumer Retail Resale Benchmark:</span>
-                <span className="font-mono font-bold text-emerald-900">₹37.00 / kg</span>
-              </div>
-              <div className="p-3 bg-[#eaedff] rounded-xl flex justify-between border border-[#dae2fd]">
-                <span className="text-[#003b1b] font-bold">Gross Retail Spread:</span>
-                <span className="font-mono font-bold text-[#003b1b]">₹7.00 / kg</span>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
-              *Illustrative prototype model: The ₹7.00/kg spread covers vendor sorting, inner-city store logistics, gunny bag retail packaging, and vendor overheads before retail margin.
-            </p>
+          <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-900">
+            <Truck className="w-4 h-4 text-emerald-700" />
+            <span>{t.eta}</span>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Active Consignment In-Transit & Unloading (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <div>
-                <span className="text-[11px] font-mono uppercase text-slate-400 font-semibold block">
-                  Matched In-Transit Consignment
-                </span>
-                <h2 className="text-base font-bold text-slate-900">
-                  Shipment #{shipment.id} — {shipment.verifiedHubWeightKg} kg Graded Onions
-                </h2>
+        {/* Route Status */}
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-xs text-slate-500 font-medium block">Current Transit Location</span>
+            <span className="text-sm font-bold text-slate-900 block mt-0.5">{t.statusEnRoute}</span>
+            <span className="text-xs text-emerald-700 font-medium">NH48 Expressway • Near Pune-Satara Toll</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div>
+              <span className="text-[11px] text-slate-500 block text-right">{t.driverContact}</span>
+              <span className="text-xs font-bold text-slate-800 block text-right">
+                {shipment.transporterName} ({shipment.vehicleNumber.split(' ')[0]})
+              </span>
+            </div>
+            <a
+              href={`tel:${shipment.transporterPhone}`}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>{t.callDriver}</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Delivery Confirmation Action */}
+        <div>
+          {deliveryConfirmed ? (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-1">
+              <div className="flex items-center justify-center gap-2 text-emerald-900 font-bold text-base">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <span>{t.deliveryConfirmedText}</span>
               </div>
-              <span className="bg-[#92f5a4] text-[#003b1b] px-3 py-1 rounded-full font-mono text-xs font-bold">
-                NH48 In Transit ➔ Vashi
+              <p className="text-xs text-emerald-800">{t.deliveryDesc}</p>
+            </div>
+          ) : (
+            <button
+              onClick={handleConfirmDelivery}
+              className="w-full py-3.5 bg-[#003b1b] hover:bg-[#005226] text-white font-black text-sm rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Check className="w-4 h-4 text-[#92f5a4]" />
+              <span>{t.btnConfirmDelivery}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Place Wholesale Order & Retail Unit Economics Side-by-Side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Order Box */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">{t.orderBoxTitle}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{t.cropName}</p>
+          </div>
+
+          {orderPlaced && (
+            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-900 font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>{t.orderSuccess}</span>
+            </div>
+          )}
+
+          <form onSubmit={handlePlaceOrder} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">{t.qtyLabel}</label>
+              <div className="flex gap-2">
+                {[500, 1000, 2000].map((val) => (
+                  <button
+                    type="button"
+                    key={val}
+                    onClick={() => setOrderQty(val)}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                      orderQty === val
+                        ? 'bg-[#003b1b] text-white border-[#003b1b]'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {val.toLocaleString()} kg
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-600">{t.totalPayable}</span>
+              <span className="text-xl font-black text-slate-900">
+                ₹{totalPurchase.toLocaleString('en-IN')}
+                <span className="text-xs font-normal text-slate-500 ml-1">(@ ₹30/kg)</span>
               </span>
             </div>
 
-            {/* Consignment Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs mb-4">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-slate-500 font-mono uppercase text-[10px] block">Invoice Purchase Total</span>
-                <span className="font-mono text-base font-bold text-[#003b1b] mt-1 block">
-                  ₹{totalPurchaseValue.toLocaleString('en-IN')}
-                </span>
-                <span className="text-[10px] text-slate-500">{shipment.verifiedHubWeightKg} kg @ ₹30/kg</span>
-              </div>
+            <button
+              type="submit"
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>{t.btnOrder}</span>
+            </button>
+          </form>
+        </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-slate-500 font-mono uppercase text-[10px] block">Grade A Ratio</span>
-                <span className="font-mono text-base font-bold text-emerald-800 mt-1 block">
-                  {shipment.gradeA_Kg} kg
-                </span>
-                <span className="text-[10px] text-slate-500">55mm+ Premium</span>
-              </div>
+        {/* Retail Economics Card */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">{t.retailProfitTitle}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{t.retailPrice}</p>
+          </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-slate-500 font-mono uppercase text-[10px] block">Consumer Value</span>
-                <span className="font-mono text-base font-bold text-slate-900 mt-1 block">
-                  ₹{totalConsumerValue.toLocaleString('en-IN')}
-                </span>
-                <span className="text-[10px] text-slate-500">@ ₹37/kg retail</span>
-              </div>
+          <div className="space-y-3 text-xs">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+              <span className="text-emerald-900 font-semibold">{t.yourMargin}</span>
+              <span className="text-base font-black text-emerald-950">+₹7.00 / kg</span>
             </div>
 
-            {/* Live Route Tracker */}
-            <div className="p-4 bg-[#f2f3ff] rounded-xl border border-slate-200 mb-4 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                  <Truck className="w-4 h-4 text-[#006d30]" /> Eicher 14ft Pro Canter (MH-11-BV-8402)
-                </span>
-                <span className="font-mono text-[#006d30] font-bold">ETA: 4 hrs 15 mins</span>
-              </div>
-
-              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div className="bg-[#006d30] h-full rounded-full" style={{ width: '75%' }}></div>
-              </div>
-
-              <div className="flex justify-between text-[11px] font-mono text-slate-500">
-                <span>Satara APMC Hub (01:20 PM)</span>
-                <span className="font-bold text-[#003b1b]">Khandala Ghat Bypass (In Transit)</span>
-                <span>Vashi Yard #12 (11:30 PM)</span>
-              </div>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <span className="text-slate-600">Expected Retail Revenue ({orderQty} kg):</span>
+              <span className="font-bold text-slate-900">₹{totalRetailRevenue.toLocaleString('en-IN')}</span>
             </div>
 
-            {/* Confirm Unloading & Final Delivery */}
-            <div className="p-4 bg-[#eaedff] rounded-xl border border-[#dae2fd] flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="font-bold text-sm text-slate-900 block">
-                  Terminal Weighing &amp; Acceptance
-                </span>
-                <span className="text-xs text-slate-600">
-                  Verify unloaded gunny bags at Vashi Yard to release final seller escrow.
-                </span>
-              </div>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <span className="text-slate-600">Wholesale Procurement Cost:</span>
+              <span className="font-bold text-slate-900">-₹{totalPurchase.toLocaleString('en-IN')}</span>
+            </div>
 
-              <button
-                onClick={handleConfirmDelivery}
-                disabled={deliveryConfirmed}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                  deliveryConfirmed
-                    ? 'bg-emerald-700 text-white cursor-default'
-                    : 'bg-[#003b1b] text-white hover:bg-[#14532d] shadow-xs'
-                }`}
-              >
-                {deliveryConfirmed ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Delivery Confirmed &amp; Payment Cleared</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{t.confirmDeliveryAtMandi}</span>
-                  </>
-                )}
-              </button>
+            <div className="p-3.5 bg-[#003b1b] text-white rounded-xl flex items-center justify-between font-bold">
+              <span>{t.expectedProfit} {orderQty} kg:</span>
+              <span className="text-lg text-[#92f5a4] font-black">
+                +₹{totalRetailProfit.toLocaleString('en-IN')}
+              </span>
             </div>
           </div>
         </div>
