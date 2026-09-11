@@ -9,6 +9,18 @@ export type StakeholderRole =
   | 'pricing' 
   | 'market_compare';
 
+export interface AppUser {
+  id: string;
+  role: 'farmer' | 'transporter' | 'vendor';
+  name: string;
+  phone: string;
+  location: string;
+  identifier: string;
+  avatarEmoji: string;
+  badge: string;
+  verified: boolean;
+}
+
 export interface FarmerProfile {
   id: string;
   name: string;

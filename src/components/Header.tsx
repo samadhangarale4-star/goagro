@@ -6,14 +6,18 @@ import {
   Volume2, 
   Coins,
   ShieldCheck,
-  Check
+  Check,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
-import { Language, StakeholderRole } from '../types';
+import { AppUser, Language, StakeholderRole } from '../types';
 import { translations } from '../i18n/translations';
 
 interface HeaderProps {
   currentRole: StakeholderRole;
   onSelectRole: (role: StakeholderRole) => void;
+  currentUser: AppUser | null;
+  onLogout: () => void;
   lang: Language;
   onSelectLang: (lang: Language) => void;
   onOpenAudioGuide: () => void;
@@ -23,6 +27,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentRole,
   onSelectRole,
+  currentUser,
+  onLogout,
   lang,
   onSelectLang,
   onOpenAudioGuide,
@@ -36,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
       priceInfo: "💰 Price Breakdown",
       audioHelp: "Audio Help",
       subline: "Satara to Mumbai Direct Onion Corridor",
+      switchUser: "Switch / Logout",
     },
     mr: {
       farmer: "🌾 शेतकरी",
@@ -44,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
       priceInfo: "💰 दर माहिती",
       audioHelp: "ऑडिओ मदत",
       subline: "सातारा ते मुंबई थेट कांदा कॉरिडॉर",
+      switchUser: "खाते बदला / बाहेर पडा",
     },
     hi: {
       farmer: "🌾 किसान",
@@ -52,6 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
       priceInfo: "💰 मूल्य जानकारी",
       audioHelp: "ऑडियो मदद",
       subline: "सतारा से मुंबई सीधा प्याज कॉरिडोर",
+      switchUser: "खाता बदलें / लॉगआउट",
     },
   }[lang];
 
@@ -173,6 +182,31 @@ export const Header: React.FC<HeaderProps> = ({
               हिंदी
             </button>
           </div>
+
+          {/* User Account / Logout */}
+          {currentUser && (
+            <div className="flex items-center gap-1.5 pl-1 border-l border-slate-200">
+              <div 
+                className="hidden xl:flex items-center gap-2 bg-emerald-50/80 border border-emerald-200/80 py-1 px-2.5 rounded-xl text-xs"
+                title={`${currentUser.name} (${currentUser.identifier})`}
+              >
+                <span className="text-sm">{currentUser.avatarEmoji}</span>
+                <div className="leading-tight">
+                  <span className="font-bold text-slate-900 block truncate max-w-[110px]">{currentUser.name.split(' ')[0]}</span>
+                  <span className="text-[10px] text-emerald-800 font-semibold">{currentUser.role === 'farmer' ? 'Farmer' : currentUser.role === 'transporter' ? 'Transporter' : 'Buyer'}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-700 border border-slate-200 hover:border-red-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                title={roleNames.switchUser}
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{roleNames.switchUser}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -213,6 +247,16 @@ export const Header: React.FC<HeaderProps> = ({
           <span>🛒</span>
           <span>{lang === 'en' ? 'Buyer' : lang === 'mr' ? 'खरेदीदार' : 'खरीदार'}</span>
         </button>
+
+        {currentUser && (
+          <button
+            onClick={onLogout}
+            className="py-2 px-2 text-center rounded-xl text-xs font-bold bg-slate-200/80 text-slate-700 hover:text-red-700 flex items-center justify-center shrink-0"
+            title={roleNames.switchUser}
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </header>
   );

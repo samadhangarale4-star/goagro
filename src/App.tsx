@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
+import { LoginPage } from './components/LoginPage';
 import { FarmerView } from './components/FarmerView';
 import { TransporterView } from './components/TransporterView';
 import { VendorView } from './components/VendorView';
@@ -8,9 +9,11 @@ import { ReceiptModal } from './components/ReceiptModal';
 import { AudioGuideModal } from './components/AudioGuideModal';
 import { ComplaintModal } from './components/ComplaintModal';
 import { defaultShipments } from './data/mockData';
-import { Language, StakeholderRole, ShipmentItem } from './types';
+import { predefinedUsers } from './data/mockUsers';
+import { Language, StakeholderRole, ShipmentItem, AppUser } from './types';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentRole, setCurrentRole] = useState<StakeholderRole>('farmer');
   const [language, setLanguage] = useState<Language>('en');
   const [shipments, setShipments] = useState<ShipmentItem[]>(defaultShipments);
@@ -23,6 +26,22 @@ export default function App() {
   const [showComplaintModal, setShowComplaintModal] = useState(false);
 
   const activeShipment = shipments.find((s) => s.id === activeShipmentId) || shipments[0];
+
+  const handleLoginSuccess = (user: AppUser) => {
+    setCurrentUser(user);
+    setCurrentRole(user.role);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
+
+  const handleSelectRole = (role: StakeholderRole) => {
+    setCurrentRole(role);
+    if (role === 'farmer' || role === 'transporter' || role === 'vendor') {
+      setCurrentUser(predefinedUsers[role]);
+    }
+  };
 
   const handleUpdateShipment = (updated: ShipmentItem) => {
     setShipments((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
@@ -88,60 +107,74 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-slate-900 flex flex-col font-sans antialiased selection:bg-[#92f5a4] selection:text-[#003b1b]">
-      {/* Streamlined Clean Header with 3 Role Tabs */}
-      <Header
-        currentRole={currentRole}
-        onSelectRole={setCurrentRole}
-        lang={language}
-        onSelectLang={setLanguage}
-        onOpenAudioGuide={() => setShowAudioGuideModal(true)}
-        onOpenPriceModal={() => setShowPriceModal(true)}
-      />
-
-      {/* Main Role Content (Full-width clean card layout, no cumbersome sidebar) */}
-      <main className="flex-1 w-full flex flex-col pb-12">
-        {currentRole === 'farmer' && (
-          <FarmerView
-            shipments={shipments}
-            currentShipment={activeShipment}
-            onSelectShipment={setActiveShipmentId}
-            onAddBooking={handleAddNewBooking}
+      {/* If not logged in, show dedicated 3-Role Login Page */}
+      {!currentUser ? (
+        <LoginPage
+          onLoginSuccess={handleLoginSuccess}
+          lang={language}
+          onSelectLang={setLanguage}
+          onOpenAudioGuide={() => setShowAudioGuideModal(true)}
+        />
+      ) : (
+        <>
+          {/* Streamlined Clean Header with 3 Role Tabs & Account Status */}
+          <Header
+            currentRole={currentRole}
+            onSelectRole={handleSelectRole}
+            currentUser={currentUser}
+            onLogout={handleLogout}
             lang={language}
             onSelectLang={setLanguage}
             onOpenAudioGuide={() => setShowAudioGuideModal(true)}
-            onOpenReceipt={() => setShowReceiptModal(true)}
-            onOpenComplaint={() => setShowComplaintModal(true)}
+            onOpenPriceModal={() => setShowPriceModal(true)}
           />
-        )}
 
-        {currentRole === 'transporter' && (
-          <TransporterView
-            shipment={activeShipment}
-            onUpdateShipment={handleUpdateShipment}
-            lang={language}
-          />
-        )}
+          {/* Main Role Content (Full-width clean card layout, no cumbersome sidebar) */}
+          <main className="flex-1 w-full flex flex-col pb-12">
+            {currentRole === 'farmer' && (
+              <FarmerView
+                shipments={shipments}
+                currentShipment={activeShipment}
+                onSelectShipment={setActiveShipmentId}
+                onAddBooking={handleAddNewBooking}
+                lang={language}
+                onSelectLang={setLanguage}
+                onOpenAudioGuide={() => setShowAudioGuideModal(true)}
+                onOpenReceipt={() => setShowReceiptModal(true)}
+                onOpenComplaint={() => setShowComplaintModal(true)}
+              />
+            )}
 
-        {currentRole === 'vendor' && (
-          <VendorView
-            shipment={activeShipment}
-            onUpdateShipment={handleUpdateShipment}
-            lang={language}
-          />
-        )}
-      </main>
+            {currentRole === 'transporter' && (
+              <TransporterView
+                shipment={activeShipment}
+                onUpdateShipment={handleUpdateShipment}
+                lang={language}
+              />
+            )}
 
-      {/* Simple Footer */}
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
-        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>
-            <strong className="text-[#003b1b]">Go Agro</strong> • Direct Satara to Mumbai Agricultural Corridor
-          </span>
-          <span className="text-[11px] text-slate-400">
-            Guaranteed ₹27/kg Farm Gate • ₹1.75/kg Transporter • ₹30/kg Bulk Buyer
-          </span>
-        </div>
-      </footer>
+            {currentRole === 'vendor' && (
+              <VendorView
+                shipment={activeShipment}
+                onUpdateShipment={handleUpdateShipment}
+                lang={language}
+              />
+            )}
+          </main>
+
+          {/* Simple Footer */}
+          <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
+            <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span>
+                <strong className="text-[#003b1b]">Go Agro</strong> • Direct Satara to Mumbai Agricultural Corridor
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Guaranteed ₹27/kg Farm Gate • ₹1.75/kg Transporter • ₹30/kg Bulk Buyer
+              </span>
+            </div>
+          </footer>
+        </>
+      )}
 
       {/* Modals */}
       <PriceBreakdownModal
